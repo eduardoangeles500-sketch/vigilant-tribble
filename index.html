@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ed's Fun Website</title>
+<title>Ed's Website</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; background:#f0f0f0; color:#333; transition:0.3s; }
 body.dark { background:#121212; color:#eee; }
@@ -13,7 +13,7 @@ button.main-btn.italic { font-style:italic; }
 button.main-btn:hover { background:#333; }
 .hidden { display:none !important; }
 .page { padding:20px; }
-.duck-img { width:200px; cursor:pointer; }
+.duck-img { font-size:200px; cursor:pointer; }
 .notes-container { display:flex; gap:20px; }
 .note-input { flex:1; display:flex; flex-direction:column; gap:10px; }
 .note-input input, .note-input textarea { padding:10px; font-size:16px; border-radius:5px; border:1px solid #ccc; }
@@ -42,8 +42,8 @@ body.dark .popup-content { background:#333; color:#fff; }
 <div id="duckPage" class="page hidden">
   <button onclick="goHome()">Back</button>
   <h2>Click the duck!</h2>
-  <div id="duck" style="font-size:200px; cursor:pointer; user-select:none;">🦆</div>
-  <audio id="quackAudio" src="https://www.soundjay.com/animal/duck-quack-01.mp3" preload="auto"></audio>
+  <div class="duck-img" onclick="quack()">🦆</div>
+  <audio id="quackAudio" src="https://www.soundjay.com/animal/duck-quack-01.mp3"></audio>
 </div>
 
 <!-- Notes Page -->
@@ -75,12 +75,13 @@ body.dark .popup-content { background:#333; color:#fff; }
 <script>
 // --- Firebase config ---
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBXKXRHthUJPrzZ_4bFsfjfUxR-0J2g1Mc",
+  authDomain: "ed-s-website.firebaseapp.com",
+  projectId: "ed-s-website",
+  storageBucket: "ed-s-website.firebasestorage.app",
+  messagingSenderId: "362346772565",
+  appId: "1:362346772565:web:a59e18fafa8212738cfcdc",
+  measurementId: "G-6CTYVKDFP0"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -91,11 +92,7 @@ function showNotesPage(){ document.getElementById('home').classList.add('hidden'
 function goHome(){ document.getElementById('home').classList.remove('hidden'); document.getElementById('duckPage').classList.add('hidden'); document.getElementById('notesPage').classList.add('hidden'); }
 
 // --- Duck ---
-const duck = document.getElementById('duck');
-const quackAudio = document.getElementById('quackAudio');
-
-function quack(){ quackAudio.currentTime = 0; quackAudio.play(); }
-duck.addEventListener('click', quack);
+function quack(){ document.getElementById('quackAudio').play(); }
 
 // --- Dark mode ---
 let darkMode = false;
@@ -157,9 +154,7 @@ function closePopup(){ document.getElementById('popup').classList.add('hidden');
 
 async function deleteNote(id){ await db.collection('notes').doc(id).delete(); renderNotes(); }
 
-// --- Ensure popup is hidden on page load ---
 document.getElementById('popup').classList.add('hidden');
-
 </script>
 </body>
   </html>
