@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ed's Website</title>
+<title>Ed's Fun Website</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; background:#f0f0f0; color:#333; transition:0.3s; }
 body.dark { background:#121212; color:#eee; }
@@ -103,10 +103,30 @@ async function saveNote(){
   const title = document.getElementById('noteTitle').value.trim();
   const content = document.getElementById('noteContent').value.trim();
   const password = document.getElementById('notePassword').value;
-  if(!title||!content){ alert('Title and content required!'); return; }
-  await db.collection('notes').add({title, content, password: password||"", createdAt: firebase.firestore.FieldValue.serverTimestamp()});
-  document.getElementById('noteTitle').value=''; document.getElementById('noteContent').value=''; document.getElementById('notePassword').value='';
-  renderNotes();
+
+  if(!title || !content){
+    alert('❌ Title and content are required!');
+    return;
+  }
+
+  try {
+    await db.collection('notes').add({
+      title,
+      content,
+      password: password || "",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    alert('✅ Note saved successfully!');
+    document.getElementById('noteTitle').value = '';
+    document.getElementById('noteContent').value = '';
+    document.getElementById('notePassword').value = '';
+
+    renderNotes();
+  } catch (err) {
+    console.error(err);
+    alert('❌ Failed to save note. Check Firestore rules or console for errors.');
+  }
 }
 
 async function renderNotes(){
@@ -115,7 +135,7 @@ async function renderNotes(){
   const snapshot = await db.collection('notes').orderBy('createdAt','desc').get();
   snapshot.forEach(doc=>{
     const note = doc.data();
-    note.id = doc.id; // save doc id for deletion
+    note.id = doc.id;
     const btn = document.createElement('button');
     btn.textContent = note.title;
     btn.onclick = ()=> openNote(note);
@@ -157,4 +177,4 @@ async function deleteNote(id){ await db.collection('notes').doc(id).delete(); re
 document.getElementById('popup').classList.add('hidden');
 </script>
 </body>
-  </html>
+</html>
