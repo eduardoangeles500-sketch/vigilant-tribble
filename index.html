@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ed's Fun Website</title>
+<title>Ed's Website</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; background:#f0f0f0; color:#333; transition:0.3s; }
 body.dark { background:#121212; color:#eee; }
@@ -13,7 +13,6 @@ button.main-btn.italic { font-style:italic; }
 button.main-btn:hover { background:#333; }
 .hidden { display:none !important; }
 .page { padding:20px; }
-.duck-img { font-size:200px; cursor:pointer; }
 .notes-container { display:flex; gap:20px; }
 .note-input { flex:1; display:flex; flex-direction:column; gap:10px; }
 .note-input input, .note-input textarea { padding:10px; font-size:16px; border-radius:5px; border:1px solid #ccc; }
@@ -26,6 +25,7 @@ body.dark .popup-content { background:#333; color:#fff; }
 .popup-content button { margin-right:5px; }
 .back-btn { margin-top:10px; background:#888; }
 .dark-toggle { position:fixed; top:10px; right:10px; padding:10px; background:#2E8B57; color:white; border:none; border-radius:5px; cursor:pointer; }
+.duck { font-size:200px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -42,7 +42,7 @@ body.dark .popup-content { background:#333; color:#fff; }
 <div id="duckPage" class="page hidden">
   <button onclick="goHome()">Back</button>
   <h2>Click the duck!</h2>
-  <div class="duck-img" onclick="quack()">🦆</div>
+  <div class="duck" onclick="quack()">🦆</div>
   <audio id="quackAudio" src="https://www.soundjay.com/animal/duck-quack-01.mp3"></audio>
 </div>
 
@@ -68,24 +68,7 @@ body.dark .popup-content { background:#333; color:#fff; }
   <div class="popup-content" id="popupContent"></div>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <script>
-// --- Firebase config ---
-const firebaseConfig = {
-  apiKey: "AIzaSyBXKXRHthUJPrzZ_4bFsfjfUxR-0J2g1Mc",
-  authDomain: "ed-s-website.firebaseapp.com",
-  projectId: "ed-s-website",
-  storageBucket: "ed-s-website.firebasestorage.app",
-  messagingSenderId: "362346772565",
-  appId: "1:362346772565:web:a59e18fafa8212738cfcdc",
-  measurementId: "G-6CTYVKDFP0"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
 // --- Pages ---
 function showDuckPage(){ document.getElementById('home').classList.add('hidden'); document.getElementById('duckPage').classList.remove('hidden'); }
 function showNotesPage(){ document.getElementById('home').classList.add('hidden'); document.getElementById('notesPage').classList.remove('hidden'); renderNotes(); }
@@ -99,82 +82,87 @@ let darkMode = false;
 function toggleDark(){ darkMode = !darkMode; document.body.classList.toggle('dark', darkMode); }
 
 // --- Notes ---
-async function saveNote(){
+let notes = [
+  { title: "Ed's English Persuasive Essay", content: "Have you ever wondered whether gadgets during class help students improve their learning competency? Some may argue that it could distract students during class hours, this may be true, but it can also effectively help students understand lessons discussed for the upcoming quizzes or tests that may be provided by teachers in the future.
+
+
+
+
+A study of grade 12 ABM students at BestLink College of the Philippines, found that the use of gadgets (such as phones and laptops) have positively affected their academic performance in school. But some may argue that according to a proposed bill (Electronic Gadget-Free Schools Act), 8 in 10 learners, aged 15 were reported to be distracted by smartphone use during class hours. However, this can effectively be addressed or solved by monitoring students during class hours or by asking students to answer questions about the topic, as a way to keep their attention focused or engaged in the lesson being discussed. Additionally, the use of gadgets can also benefit the teachers by giving them more options to a more flexible and interactive learning to not just engage students, but to also give them a better learning competency towards the subject.
+
+In conclusion, gadgets such as smartphones, tablets, and laptops can be used as a tool during class to effectively and efficiently benefit the present and future generations of students to catch up and fully understand the lessons provided by the teacher. Moreover, as technology is rapidly developing faster than ever, what can we do now is to use this technology responsibly and into our own advantage to possibly support our future growth and development.", password: "eddie" }
+];
+
+function saveNote(){
   const title = document.getElementById('noteTitle').value.trim();
   const content = document.getElementById('noteContent').value.trim();
   const password = document.getElementById('notePassword').value;
-
-  if(!title || !content){
-    alert('❌ Title and content are required!');
-    return;
-  }
-
-  try {
-    await db.collection('notes').add({
-      title,
-      content,
-      password: password || "",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    alert('✅ Note saved successfully!');
-    document.getElementById('noteTitle').value = '';
-    document.getElementById('noteContent').value = '';
-    document.getElementById('notePassword').value = '';
-
-    renderNotes();
-  } catch (err) {
-    console.error(err);
-    alert('❌ Failed to save note. Check Firestore rules or console for errors.');
-  }
+  if(!title||!content){ alert('Title and content required!'); return; }
+  notes.unshift({title, content, password: password || ""});
+  document.getElementById('noteTitle').value=''; 
+  document.getElementById('noteContent').value='';
+  document.getElementById('notePassword').value='';
+  renderNotes();
 }
 
-async function renderNotes(){
+function renderNotes(){
   const noteList = document.getElementById('noteList');
   noteList.innerHTML='';
-  const snapshot = await db.collection('notes').orderBy('createdAt','desc').get();
-  snapshot.forEach(doc=>{
-    const note = doc.data();
-    note.id = doc.id;
+  notes.forEach((note,index)=>{
     const btn = document.createElement('button');
     btn.textContent = note.title;
-    btn.onclick = ()=> openNote(note);
+    btn.onclick = ()=> openNote(note,index);
     noteList.appendChild(btn);
   });
 }
 
-function openNote(note){
+function openNote(note,index){
   if(note.password){
-    showPopup(`Enter password for "${note.title}"`, true, (pass)=>{
-      if(pass===note.password){ showNoteContent(note); }
+    showPopupPassword(`Enter password for "${note.title}"`, (pass)=>{
+      if(pass===note.password){ showNoteContent(note,index); }
       else { alert('Wrong password!'); }
     });
-  } else showNoteContent(note);
+  } else showNoteContent(note,index);
 }
 
-function showNoteContent(note){
-  showPopup(`<h3>${note.title}</h3><p>${note.content.replace(/\n/g,'<br>')}</p><button onclick="deleteNote('${note.id}')">Delete</button>`);
+function showNoteContent(note,index){
+  showPopup(`<h3>${note.title}</h3><p>${note.content.replace(/\n/g,'<br>')}</p><button onclick="deleteNote(${index})">Delete</button>`);
 }
 
 // --- Popup ---
-function showPopup(html,input=false,callback=null){
+function showPopup(html){
+  const popup=document.getElementById('popup');
+  const content=document.getElementById('popupContent');
+  content.innerHTML=html;
+  const backBtn=document.createElement('button');
+  backBtn.textContent='Back';
+  backBtn.classList.add('back-btn');
+  backBtn.onclick=closePopup;
+  content.appendChild(backBtn);
+  popup.classList.remove('hidden');
+}
+
+function showPopupPassword(message, callback){
   const popup=document.getElementById('popup');
   const content=document.getElementById('popupContent');
   content.innerHTML='';
-  if(input){
-    const p=document.createElement('p'); p.innerHTML=html; content.appendChild(p);
-    const inp=document.createElement('input'); inp.type='password'; content.appendChild(inp);
-    const okBtn=document.createElement('button'); okBtn.textContent='OK'; okBtn.onclick=()=>{ const val=inp.value; closePopup(); if(callback)callback(val); }; content.appendChild(okBtn);
-    const backBtn=document.createElement('button'); backBtn.textContent='Back'; backBtn.classList.add('back-btn'); backBtn.onclick=closePopup; content.appendChild(backBtn);
-  } else { content.innerHTML=html; const backBtn=document.createElement('button'); backBtn.textContent='Back'; backBtn.classList.add('back-btn'); backBtn.onclick=closePopup; content.appendChild(backBtn);}
+  const p=document.createElement('p'); p.textContent=message; content.appendChild(p);
+  const inp=document.createElement('input'); inp.type='password'; content.appendChild(inp);
+  const okBtn=document.createElement('button'); okBtn.textContent='OK'; okBtn.onclick=()=>{ closePopup(); callback(inp.value); }; content.appendChild(okBtn);
+  const backBtn=document.createElement('button'); backBtn.textContent='Back'; backBtn.classList.add('back-btn'); backBtn.onclick=closePopup; content.appendChild(backBtn);
   popup.classList.remove('hidden');
 }
 
 function closePopup(){ document.getElementById('popup').classList.add('hidden'); }
 
-async function deleteNote(id){ await db.collection('notes').doc(id).delete(); renderNotes(); }
+function deleteNote(index){
+  notes.splice(index,1);
+  closePopup();
+  renderNotes();
+}
 
-document.getElementById('popup').classList.add('hidden');
+// --- Render built-in notes on page load ---
+renderNotes();
 </script>
 </body>
-</html>
+    </html>
