@@ -42,8 +42,8 @@ body.dark .popup-content { background:#333; color:#fff; }
 <div id="duckPage" class="page hidden">
   <button onclick="goHome()">Back</button>
   <h2>Click the duck!</h2>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/3/33/Mallard_duckling.jpg" class="duck-img" onclick="quack()">
-  <audio id="quackAudio" src="https://www.soundjay.com/animal/duck-quack-01.mp3"></audio>
+  <div id="duck" style="font-size:200px; cursor:pointer; user-select:none;">🦆</div>
+  <audio id="quackAudio" src="https://www.soundjay.com/animal/duck-quack-01.mp3" preload="auto"></audio>
 </div>
 
 <!-- Notes Page -->
@@ -91,7 +91,11 @@ function showNotesPage(){ document.getElementById('home').classList.add('hidden'
 function goHome(){ document.getElementById('home').classList.remove('hidden'); document.getElementById('duckPage').classList.add('hidden'); document.getElementById('notesPage').classList.add('hidden'); }
 
 // --- Duck ---
-function quack(){ document.getElementById('quackAudio').play(); }
+const duck = document.getElementById('duck');
+const quackAudio = document.getElementById('quackAudio');
+
+function quack(){ quackAudio.currentTime = 0; quackAudio.play(); }
+duck.addEventListener('click', quack);
 
 // --- Dark mode ---
 let darkMode = false;
