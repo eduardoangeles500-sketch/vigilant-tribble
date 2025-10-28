@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ed's Website</title>
+<title>Ed's Fun Website</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; background:#f0f0f0; color:#333; transition:0.3s; }
 body.dark { background:#121212; color:#eee; }
@@ -18,44 +18,40 @@ button.main-btn:hover { background:#333; }
 .note-input input, .note-input textarea { padding:10px; font-size:16px; border-radius:5px; border:1px solid #ccc; }
 .note-list { width:200px; border-left:1px solid #ccc; padding-left:10px; }
 .note-list button { width:100%; padding:8px; margin-bottom:5px; cursor:pointer; border-radius:5px; border:none; background:#333; color:#fff; text-align:left; }
-.popup { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:1000; }
-.popup-content { background:#fff; padding:20px; border-radius:10px; width:300px; max-width:80%; color:#000; }
-body.dark .popup-content { background:#333; color:#fff; }
-.popup-content input { width:100%; padding:8px; margin-bottom:10px; }
-.popup-content button { margin-right:5px; }
-.back-btn { margin-top:10px; background:#888; }
+.full-note { white-space: pre-wrap; line-height:1.5; }
+.back-btn { margin-top:10px; background:#888; padding:10px; border:none; border-radius:5px; cursor:pointer; }
 .dark-toggle { position:fixed; top:10px; right:10px; padding:10px; background:#2E8B57; color:white; border:none; border-radius:5px; cursor:pointer; }
-.duck { font-size:200px; cursor:pointer; }
+.duck { font-size:200px; cursor:pointer; text-align:center; }
 </style>
 </head>
 <body>
 
-<button class="dark-toggle" onclick="toggleDark()">Toggle Dark Mode</button>
+<button id="darkToggle" class="dark-toggle">Toggle Dark Mode</button>
 
 <!-- Home -->
 <div id="home" class="centered">
-  <button class="main-btn" onclick="showDuckPage()">hehehe...</button>
-  <button class="main-btn italic" onclick="showNotesPage()">Ed's Stuff...</button>
+  <button id="duckBtn" class="main-btn">hehehe...</button>
+  <button id="notesBtn" class="main-btn italic">Ed's Stuff...</button>
 </div>
 
 <!-- Duck Page -->
 <div id="duckPage" class="page hidden">
-  <button onclick="goHome()">Back</button>
+  <button id="duckBack" class="back-btn">Back</button>
   <h2>Click the duck!</h2>
-  <div class="duck" onclick="quack()">🦆</div>
+  <div id="duck" class="duck">🦆</div>
   <audio id="quackAudio" src="https://www.soundjay.com/animal/duck-quack-01.mp3"></audio>
 </div>
 
 <!-- Notes Page -->
 <div id="notesPage" class="page hidden">
-  <button onclick="goHome()">Back</button>
+  <button id="notesBack" class="back-btn">Back</button>
   <h2>Ed's Notes</h2>
   <div class="notes-container">
     <div class="note-input">
       <input type="text" id="noteTitle" placeholder="Title">
       <textarea id="noteContent" placeholder="Write your note..."></textarea>
       <input type="password" id="notePassword" placeholder="Password (optional)">
-      <button onclick="saveNote()">Save Note</button>
+      <button id="saveNoteBtn">Save Note</button>
     </div>
     <div class="note-list" id="noteList">
       <!-- Notes buttons appear here -->
@@ -63,106 +59,120 @@ body.dark .popup-content { background:#333; color:#fff; }
   </div>
 </div>
 
-<!-- Popup -->
-<div id="popup" class="popup hidden">
-  <div class="popup-content" id="popupContent"></div>
+<!-- Full Note Page -->
+<div id="fullNotePage" class="page hidden">
+  <button id="fullNoteBack" class="back-btn">Back</button>
+  <h2 id="fullNoteTitle"></h2>
+  <p id="fullNoteContent" class="full-note"></p>
+  <button id="deleteNoteBtn" class="back-btn">Delete Note</button>
 </div>
 
 <script>
-// --- Pages ---
-function showDuckPage(){ document.getElementById('home').classList.add('hidden'); document.getElementById('duckPage').classList.remove('hidden'); }
-function showNotesPage(){ document.getElementById('home').classList.add('hidden'); document.getElementById('notesPage').classList.remove('hidden'); renderNotes(); }
-function goHome(){ document.getElementById('home').classList.remove('hidden'); document.getElementById('duckPage').classList.add('hidden'); document.getElementById('notesPage').classList.add('hidden'); }
+document.addEventListener('DOMContentLoaded', function() {
+  const home = document.getElementById('home');
+  const duckPage = document.getElementById('duckPage');
+  const notesPage = document.getElementById('notesPage');
+  const fullNotePage = document.getElementById('fullNotePage');
+  const darkToggle = document.getElementById('darkToggle');
+  const duckBtn = document.getElementById('duckBtn');
+  const notesBtn = document.getElementById('notesBtn');
+  const duckBack = document.getElementById('duckBack');
+  const notesBack = document.getElementById('notesBack');
+  const fullNoteBack = document.getElementById('fullNoteBack');
+  const duck = document.getElementById('duck');
+  const quackAudio = document.getElementById('quackAudio');
+  const saveNoteBtn = document.getElementById('saveNoteBtn');
+  const noteList = document.getElementById('noteList');
+  const fullNoteTitle = document.getElementById('fullNoteTitle');
+  const fullNoteContent = document.getElementById('fullNoteContent');
+  const deleteNoteBtn = document.getElementById('deleteNoteBtn');
 
-// --- Duck ---
-function quack(){ document.getElementById('quackAudio').play(); }
-
-// --- Dark mode ---
-let darkMode = false;
-function toggleDark(){ darkMode = !darkMode; document.body.classList.toggle('dark', darkMode); }
-
-// --- Notes ---
-let notes = [
-  { title: "Ed's English Persuasive Essay", content: "Have you ever wondered whether gadgets during class help students improve their learning competency? Some may argue that it could distract students during class hours, this may be true, but it can also effectively help students understand lessons discussed for the upcoming quizzes or tests that may be provided by teachers in the future.
-
-
-
+  let darkMode = false;
+  let currentNoteIndex = null;
+  let notes = [
+    { 
+      title: "Ed's English Persuasive Essay", 
+      content: `Have you ever wondered whether gadgets during class help students improve their learning competency? Some may argue that it could distract students during class hours, this may be true, but it can also effectively help students understand lessons discussed for the upcoming quizzes or tests that may be provided by teachers in the future.
 
 A study of grade 12 ABM students at BestLink College of the Philippines, found that the use of gadgets (such as phones and laptops) have positively affected their academic performance in school. But some may argue that according to a proposed bill (Electronic Gadget-Free Schools Act), 8 in 10 learners, aged 15 were reported to be distracted by smartphone use during class hours. However, this can effectively be addressed or solved by monitoring students during class hours or by asking students to answer questions about the topic, as a way to keep their attention focused or engaged in the lesson being discussed. Additionally, the use of gadgets can also benefit the teachers by giving them more options to a more flexible and interactive learning to not just engage students, but to also give them a better learning competency towards the subject.
 
-In conclusion, gadgets such as smartphones, tablets, and laptops can be used as a tool during class to effectively and efficiently benefit the present and future generations of students to catch up and fully understand the lessons provided by the teacher. Moreover, as technology is rapidly developing faster than ever, what can we do now is to use this technology responsibly and into our own advantage to possibly support our future growth and development.", password: "eddie" }
-];
+In conclusion, gadgets such as smartphones, tablets, and laptops can be used as a tool during class to effectively and efficiently benefit the present and future generations of students to catch up and fully understand the lessons provided by the teacher. Moreover, as technology is rapidly developing faster than ever, what can we do now is to use this technology responsibly and into our own advantage to possibly support our future growth and development.`,
+      password: "eddie"
+    }
+  ];
 
-function saveNote(){
-  const title = document.getElementById('noteTitle').value.trim();
-  const content = document.getElementById('noteContent').value.trim();
-  const password = document.getElementById('notePassword').value;
-  if(!title||!content){ alert('Title and content required!'); return; }
-  notes.unshift({title, content, password: password || ""});
-  document.getElementById('noteTitle').value=''; 
-  document.getElementById('noteContent').value='';
-  document.getElementById('notePassword').value='';
-  renderNotes();
-}
-
-function renderNotes(){
-  const noteList = document.getElementById('noteList');
-  noteList.innerHTML='';
-  notes.forEach((note,index)=>{
-    const btn = document.createElement('button');
-    btn.textContent = note.title;
-    btn.onclick = ()=> openNote(note,index);
-    noteList.appendChild(btn);
+  // --- Page navigation ---
+  duckBtn.addEventListener('click', ()=>{ home.classList.add('hidden'); duckPage.classList.remove('hidden'); });
+  notesBtn.addEventListener('click', ()=>{ home.classList.add('hidden'); notesPage.classList.remove('hidden'); renderNotes(); });
+  duckBack.addEventListener('click', ()=>{ duckPage.classList.add('hidden'); home.classList.remove('hidden'); });
+  notesBack.addEventListener('click', ()=>{ notesPage.classList.add('hidden'); home.classList.remove('hidden'); });
+  fullNoteBack.addEventListener('click', ()=>{
+    fullNotePage.classList.add('hidden');
+    notesPage.classList.remove('hidden');
   });
-}
 
-function openNote(note,index){
-  if(note.password){
-    showPopupPassword(`Enter password for "${note.title}"`, (pass)=>{
-      if(pass===note.password){ showNoteContent(note,index); }
-      else { alert('Wrong password!'); }
+  // --- Dark mode ---
+  darkToggle.addEventListener('click', ()=>{
+    darkMode = !darkMode;
+    document.body.classList.toggle('dark', darkMode);
+  });
+
+  // --- Duck ---
+  duck.addEventListener('click', ()=>{ quackAudio.play(); });
+
+  // --- Notes ---
+  saveNoteBtn.addEventListener('click', ()=>{
+    const title = document.getElementById('noteTitle').value.trim();
+    const content = document.getElementById('noteContent').value.trim();
+    const password = document.getElementById('notePassword').value;
+    if(!title || !content){ alert('Title and content required!'); return; }
+    notes.unshift({title, content, password: password || ""});
+    document.getElementById('noteTitle').value='';
+    document.getElementById('noteContent').value='';
+    document.getElementById('notePassword').value='';
+    renderNotes();
+  });
+
+  function renderNotes(){
+    noteList.innerHTML='';
+    notes.forEach((note,index)=>{
+      const btn = document.createElement('button');
+      btn.textContent = note.title;
+      btn.addEventListener('click', ()=>{ openNote(index); });
+      noteList.appendChild(btn);
     });
-  } else showNoteContent(note,index);
-}
+  }
 
-function showNoteContent(note,index){
-  showPopup(`<h3>${note.title}</h3><p>${note.content.replace(/\n/g,'<br>')}</p><button onclick="deleteNote(${index})">Delete</button>`);
-}
+  function openNote(index){
+    const note = notes[index];
+    currentNoteIndex = index;
+    if(note.password){
+      const pass = prompt(`Enter password for "${note.title}"`);
+      if(pass!==note.password){ alert('Wrong password!'); return; }
+    }
+    showFullNote(note);
+  }
 
-// --- Popup ---
-function showPopup(html){
-  const popup=document.getElementById('popup');
-  const content=document.getElementById('popupContent');
-  content.innerHTML=html;
-  const backBtn=document.createElement('button');
-  backBtn.textContent='Back';
-  backBtn.classList.add('back-btn');
-  backBtn.onclick=closePopup;
-  content.appendChild(backBtn);
-  popup.classList.remove('hidden');
-}
+  function showFullNote(note){
+    notesPage.classList.add('hidden');
+    fullNoteTitle.textContent = note.title;
+    fullNoteContent.textContent = note.content;
+    fullNotePage.classList.remove('hidden');
+  }
 
-function showPopupPassword(message, callback){
-  const popup=document.getElementById('popup');
-  const content=document.getElementById('popupContent');
-  content.innerHTML='';
-  const p=document.createElement('p'); p.textContent=message; content.appendChild(p);
-  const inp=document.createElement('input'); inp.type='password'; content.appendChild(inp);
-  const okBtn=document.createElement('button'); okBtn.textContent='OK'; okBtn.onclick=()=>{ closePopup(); callback(inp.value); }; content.appendChild(okBtn);
-  const backBtn=document.createElement('button'); backBtn.textContent='Back'; backBtn.classList.add('back-btn'); backBtn.onclick=closePopup; content.appendChild(backBtn);
-  popup.classList.remove('hidden');
-}
+  deleteNoteBtn.addEventListener('click', ()=>{
+    if(currentNoteIndex!==null){
+      notes.splice(currentNoteIndex,1);
+      currentNoteIndex = null;
+      fullNotePage.classList.add('hidden');
+      renderNotes();
+      notesPage.classList.remove('hidden');
+    }
+  });
 
-function closePopup(){ document.getElementById('popup').classList.add('hidden'); }
-
-function deleteNote(index){
-  notes.splice(index,1);
-  closePopup();
+  // --- Initial render ---
   renderNotes();
-}
-
-// --- Render built-in notes on page load ---
-renderNotes();
+});
 </script>
 </body>
-    </html>
+</html>
